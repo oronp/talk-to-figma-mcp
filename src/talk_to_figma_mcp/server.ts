@@ -2648,7 +2648,8 @@ type FigmaCommand =
   | "set_default_connector"
   | "create_connections"
   | "set_focus"
-  | "set_selections";
+  | "set_selections"
+  | "execute_code";
 
 type CommandParams = {
   get_document_info: Record<string, never>;
@@ -2737,6 +2738,7 @@ type CommandParams = {
   };
   execute_code: {
     code: string;
+    params: Record<string, unknown>;
   };
   join: {
     channel: string;
