@@ -228,13 +228,8 @@ async def _listen() -> None:
                 my_response = json_data.get("message")
                 logger.debug("Received message: %s", json.dumps(my_response))
 
-                if (
-                    isinstance(my_response, dict)
-                    and my_response.get("id")
-                    and my_response["id"] in pending_requests
-                    and my_response.get("result") is not None
-                ):
-                    req_id = my_response["id"]
+                req_id = my_response.get("id") if isinstance(my_response, dict) else None
+                if req_id and req_id in pending_requests:
                     future = pending_requests.pop(req_id)
                     if not future.done():
                         if my_response.get("error"):
@@ -244,8 +239,9 @@ async def _listen() -> None:
                             future.set_exception(
                                 RuntimeError(my_response["error"])
                             )
-                        else:
+                        elif my_response.get("result") is not None:
                             future.set_result(my_response["result"])
+                        # else: no result and no error — ignore (shouldn't happen)
                 else:
                     logger.info(
                         "Received broadcast message: %s",
@@ -345,17 +341,11 @@ async def send_command(
     # Await with timeout
     timeout_sec = timeout_ms / 1000.0
     try:
-        result = await asyncio.wait_for(asyncio.shield(future), timeout=timeout_sec)
+        result = await asyncio.wait_for(future, timeout=timeout_sec)
+        return result
     except asyncio.TimeoutError:
         pending_requests.pop(req_id, None)
-        logger.error(
-            "Request %s to Figma timed out after %s seconds",
-            req_id,
-            timeout_sec,
-        )
-        raise RuntimeError("Request to Figma timed out")
-
-    return result
+        raise RuntimeError(f"Request to Figma timed out after {timeout_ms // 1000}s")
 
 
 # ---------------------------------------------------------------------------
