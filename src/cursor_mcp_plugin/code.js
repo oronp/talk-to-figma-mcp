@@ -234,11 +234,12 @@ async function handleCommand(command, params) {
     case "set_selections":
       return await setSelections(params);
     case "execute_code": {
-      if (\!params || typeof params.code \!== "string") {
+      if (\!params || typeof params.code \!== "string" || params.code.trim().length === 0) {
         throw new Error("Missing or invalid code parameter");
       }
       const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
       const fn = new AsyncFunction("figma", "params", params.code);
+      // params.params is the user-supplied data dict (distinct from the outer command envelope params)
       return await fn(figma, params.params || {});
     }
     default:
