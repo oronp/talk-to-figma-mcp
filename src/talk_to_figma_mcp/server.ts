@@ -2607,6 +2607,46 @@ This detailed process ensures you correctly interpret the reaction data, prepare
 );
 
 
+// Execute Code Tool
+server.tool(
+  "execute_code",
+  "Execute arbitrary JavaScript code in the Figma plugin context. The code runs as the body of an async function with `figma` (full Figma Plugin API) and `params` (your data object) in scope. Returns whatever the code returns. Use this to run complex, multi-step Figma operations in a single call — ideal for skills that create templated designs (e.g. typography systems, component sets).",
+  {
+    code: z.string().describe(
+      "JavaScript code to execute. Runs as the body of: async function(figma, params) { <your code> }. Has full figma.* API access and async/await support."
+    ),
+    params: z
+      .record(z.unknown())
+      .optional()
+      .describe("Data to pass into the code as the `params` argument (fonts, sizes, node IDs, etc.)"),
+  },
+  async ({ code, params: codeParams }: any) => {
+    try {
+      const result = await sendCommandToFigma("execute_code", {
+        code,
+        params: codeParams || {},
+      });
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error executing code: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+      };
+    }
+  }
+);
+
 // Define command types and parameters
 type FigmaCommand =
   | "get_document_info"
