@@ -240,7 +240,10 @@ async function handleCommand(command, params) {
       const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
       const fn = new AsyncFunction("figma", "params", params.code);
       // params.params is the user-supplied data dict (distinct from the outer command envelope params)
-      return await fn(figma, params.params || {});
+      const result = await fn(figma, params.params || {});
+      // Always return a truthy value — the WebSocket response handler gates on result being truthy,
+      // so returning undefined (common for side-effect-only templates) would cause a silent hang.
+      return result \!== undefined && result \!== null ? result : { success: true };
     }
     default:
       throw new Error(`Unknown command: ${command}`);

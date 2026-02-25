@@ -2625,7 +2625,7 @@ server.tool(
       const result = await sendCommandToFigma("execute_code", {
         code,
         params: codeParams || {},
-      });
+      }, 120000); // 2-minute timeout for potentially long-running template code
       return {
         content: [
           {
