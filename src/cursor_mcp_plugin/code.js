@@ -233,6 +233,14 @@ async function handleCommand(command, params) {
       return await setFocus(params);
     case "set_selections":
       return await setSelections(params);
+    case "execute_code": {
+      if (\!params || typeof params.code \!== "string") {
+        throw new Error("Missing or invalid code parameter");
+      }
+      const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+      const fn = new AsyncFunction("figma", "params", params.code);
+      return await fn(figma, params.params || {});
+    }
     default:
       throw new Error(`Unknown command: ${command}`);
   }
