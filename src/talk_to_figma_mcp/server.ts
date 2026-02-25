@@ -2738,7 +2738,7 @@ type CommandParams = {
   };
   execute_code: {
     code: string;
-    params: Record<string, unknown>;
+    params?: Record<string, unknown>;
   };
   join: {
     channel: string;
