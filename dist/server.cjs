@@ -2236,7 +2236,7 @@ server.tool(
       const result = await sendCommandToFigma("execute_code", {
         code,
         params: codeParams || {}
-      });
+      }, 12e4);
       return {
         content: [
           {
