@@ -17,11 +17,10 @@ import sys
 import uuid
 from typing import Any, Dict, List, Optional
 
-import mcp.server.stdio
 import mcp.types as types
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+from mcp.types import ImageContent, TextContent, Tool
 
 # ---------------------------------------------------------------------------
 # Logging — ALL output goes to stderr to avoid polluting the MCP stdio transport
@@ -1045,7 +1044,7 @@ async def list_tools() -> List[Tool]:
 # ---------------------------------------------------------------------------
 
 @server.call_tool()
-async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
+async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent | ImageContent]:
     # ── Group A ──────────────────────────────────────────────────────────────
     if name == "get_document_info":
         try:
@@ -1645,16 +1644,16 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     elif name == "scan_nodes_by_types":
         try:
             node_id = arguments.get("nodeId")
-            types = arguments.get("types")
+            node_types = arguments.get("types")
             if node_id is None:
                 return err("scan_nodes_by_types requires nodeId")
-            if types is None:
+            if node_types is None:
                 return err("scan_nodes_by_types requires types")
-            if not isinstance(types, list):
+            if not isinstance(node_types, list):
                 return err("scan_nodes_by_types: types must be an array")
             params: Dict[str, Any] = {
                 "nodeId": node_id,
-                "types": types,
+                "types": node_types,
             }
             result = await send_command("scan_nodes_by_types", params)
             typed = result if isinstance(result, dict) else {}
@@ -1668,7 +1667,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                     TextContent(type="text", text=json.dumps(matching_nodes, indent=2)),
                 ]
             return [
-                TextContent(type="text", text=f"Starting node type scanning for types: {', '.join(types)}..."),
+                TextContent(type="text", text=f"Starting node type scanning for types: {', '.join(node_types)}..."),
                 TextContent(type="text", text=json.dumps(result, indent=2)),
             ]
         except Exception as e:
