@@ -1027,9 +1027,11 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             result = await send_command("read_my_design", {})
             return ok(result)
         except Exception as e:
-            return err(f"Error getting node info: {e}")
+            return err(f"Error reading design: {e}")
     elif name == "get_node_info":
         try:
+            if not arguments or "nodeId" not in arguments:
+                return err("Missing required parameter: nodeId")
             node_id: str = arguments["nodeId"]
             result = await send_command("get_node_info", {"nodeId": node_id})
             return ok(filter_figma_node(result))
@@ -1037,11 +1039,19 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return err(f"Error getting node info: {e}")
     elif name == "get_nodes_info":
         try:
+            if not arguments or "nodeIds" not in arguments:
+                return err("Missing required parameter: nodeIds")
             node_ids: List[str] = arguments["nodeIds"]
             results = await asyncio.gather(
-                *[send_command("get_node_info", {"nodeId": nid}) for nid in node_ids]
+                *[send_command("get_node_info", {"nodeId": nid}) for nid in node_ids],
+                return_exceptions=True
             )
-            filtered = [filter_figma_node(r) for r in results]
+            filtered = [
+                filter_figma_node(r)
+                for r in results
+                if not isinstance(r, Exception)
+            ]
+            filtered = [f for f in filtered if f is not None]
             return ok(filtered)
         except Exception as e:
             return err(f"Error getting nodes info: {e}")
@@ -1070,6 +1080,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return err(f"Error getting annotations: {e}")
     elif name == "get_reactions":
         try:
+            if not arguments or "nodeIds" not in arguments:
+                return err("Missing required parameter: nodeIds")
             node_ids = arguments["nodeIds"]
             result = await send_command("get_reactions", {"nodeIds": node_ids})
             return ok(result)
