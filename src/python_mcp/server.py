@@ -895,10 +895,10 @@ ALL_TOOLS: List[Tool] = [
             "properties": {
                 "nodeId": {
                     "type": "string",
-                    "description": "ID of the component instance",
+                    "description": "ID of the component instance (optional — uses current selection if omitted)",
                 }
             },
-            "required": ["nodeId"],
+            "required": [],
         },
     ),
     Tool(
