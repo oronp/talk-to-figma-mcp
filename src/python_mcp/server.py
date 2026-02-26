@@ -629,21 +629,10 @@ ALL_TOOLS: List[Tool] = [
             "properties": {
                 "nodeId": {"type": "string", "description": "ID of the node"},
                 "radius": {"type": "number", "description": "Corner radius value"},
-                "topLeft": {
-                    "type": "number",
-                    "description": "Top-left corner radius (optional)",
-                },
-                "topRight": {
-                    "type": "number",
-                    "description": "Top-right corner radius (optional)",
-                },
-                "bottomLeft": {
-                    "type": "number",
-                    "description": "Bottom-left corner radius (optional)",
-                },
-                "bottomRight": {
-                    "type": "number",
-                    "description": "Bottom-right corner radius (optional)",
+                "corners": {
+                    "type": "array",
+                    "items": {"type": "boolean"},
+                    "description": "Which corners to apply the radius to: [topLeft, topRight, bottomRight, bottomLeft]. Defaults to all true.",
                 },
             },
             "required": ["nodeId", "radius"],
@@ -696,7 +685,7 @@ ALL_TOOLS: List[Tool] = [
                 "nodeId": {"type": "string", "description": "ID of the node to export"},
                 "format": {
                     "type": "string",
-                    "description": "Export format: PNG, JPG, SVG, PDF (optional)",
+                    "description": "Export format. Note: currently the Figma plugin only supports PNG regardless of this value.",
                 },
                 "scale": {"type": "number", "description": "Export scale (optional)"},
             },
