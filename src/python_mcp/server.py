@@ -1089,19 +1089,142 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return err(f"Error getting reactions: {e}")
     # ── Group B ──────────────────────────────────────────────────────────────
     elif name == "create_rectangle":
-        return _stub(name)
+        try:
+            x = arguments.get("x")
+            y = arguments.get("y")
+            width = arguments.get("width")
+            height = arguments.get("height")
+            if x is None or y is None or width is None or height is None:
+                return err("create_rectangle requires x, y, width, and height")
+            params: Dict[str, Any] = {
+                "x": x,
+                "y": y,
+                "width": width,
+                "height": height,
+                "name": arguments.get("name") or "Rectangle",
+            }
+            parent_id = arguments.get("parentId")
+            if parent_id is not None:
+                params["parentId"] = parent_id
+            result = await send_command("create_rectangle", params)
+            return ok(result)
+        except Exception as e:
+            return err(f"Error creating rectangle: {e}")
     elif name == "create_frame":
-        return _stub(name)
+        try:
+            x = arguments.get("x")
+            y = arguments.get("y")
+            width = arguments.get("width")
+            height = arguments.get("height")
+            if x is None or y is None or width is None or height is None:
+                return err("create_frame requires x, y, width, and height")
+            params: Dict[str, Any] = {
+                "x": x,
+                "y": y,
+                "width": width,
+                "height": height,
+                "name": arguments.get("name") or "Frame",
+                "fillColor": arguments.get("fillColor") or {"r": 1, "g": 1, "b": 1, "a": 1},
+            }
+            for opt_key in (
+                "parentId",
+                "strokeColor",
+                "strokeWeight",
+                "layoutMode",
+                "layoutWrap",
+                "paddingTop",
+                "paddingRight",
+                "paddingBottom",
+                "paddingLeft",
+                "primaryAxisAlignItems",
+                "counterAxisAlignItems",
+                "layoutSizingHorizontal",
+                "layoutSizingVertical",
+                "itemSpacing",
+            ):
+                val = arguments.get(opt_key)
+                if val is not None:
+                    params[opt_key] = val
+            result = await send_command("create_frame", params)
+            return ok(result)
+        except Exception as e:
+            return err(f"Error creating frame: {e}")
     elif name == "create_text":
-        return _stub(name)
+        try:
+            x = arguments.get("x")
+            y = arguments.get("y")
+            text = arguments.get("text")
+            if x is None or y is None or text is None:
+                return err("create_text requires x, y, and text")
+            params: Dict[str, Any] = {
+                "x": x,
+                "y": y,
+                "text": text,
+                "fontSize": arguments.get("fontSize") or 14,
+                "fontWeight": arguments.get("fontWeight") or 400,
+                "fontColor": arguments.get("fontColor") or {"r": 0, "g": 0, "b": 0, "a": 1},
+                "name": arguments.get("name") or "Text",
+            }
+            parent_id = arguments.get("parentId")
+            if parent_id is not None:
+                params["parentId"] = parent_id
+            result = await send_command("create_text", params)
+            return ok(result)
+        except Exception as e:
+            return err(f"Error creating text: {e}")
     elif name == "create_component_instance":
-        return _stub(name)
+        try:
+            component_id = arguments.get("componentId")
+            if not component_id:
+                return err("create_component_instance requires componentId")
+            params: Dict[str, Any] = {"componentKey": component_id}
+            x = arguments.get("x")
+            if x is not None:
+                params["x"] = x
+            y = arguments.get("y")
+            if y is not None:
+                params["y"] = y
+            parent_id = arguments.get("parentId")
+            if parent_id is not None:
+                params["parentId"] = parent_id
+            result = await send_command("create_component_instance", params)
+            return ok(result)
+        except Exception as e:
+            return err(f"Error creating component instance: {e}")
     elif name == "clone_node":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            if not node_id:
+                return err("clone_node requires nodeId")
+            params: Dict[str, Any] = {"nodeId": node_id}
+            x = arguments.get("x")
+            if x is not None:
+                params["x"] = x
+            y = arguments.get("y")
+            if y is not None:
+                params["y"] = y
+            result = await send_command("clone_node", params)
+            return ok(result)
+        except Exception as e:
+            return err(f"Error cloning node: {e}")
     elif name == "delete_node":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            if not node_id:
+                return err("delete_node requires nodeId")
+            await send_command("delete_node", {"nodeId": node_id})
+            return ok({"deleted": node_id})
+        except Exception as e:
+            return err(f"Error deleting node: {e}")
     elif name == "delete_multiple_nodes":
-        return _stub(name)
+        try:
+            node_ids = arguments.get("nodeIds")
+            if not node_ids:
+                return err("delete_multiple_nodes requires nodeIds")
+            result = await send_command("delete_multiple_nodes", {"nodeIds": node_ids})
+            return ok(result)
+        except Exception as e:
+            return err(f"Error deleting multiple nodes: {e}")
     # ── Group C ──────────────────────────────────────────────────────────────
     elif name == "set_fill_color":
         return _stub(name)
