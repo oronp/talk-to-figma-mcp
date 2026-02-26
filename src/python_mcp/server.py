@@ -1534,25 +1534,209 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return err(f"Error setting item spacing: {e}")
     # ── Group E ──────────────────────────────────────────────────────────────
     elif name == "set_annotation":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            label_markdown = arguments.get("labelMarkdown")
+            if node_id is None:
+                return err("set_annotation requires nodeId")
+            if label_markdown is None:
+                return err("set_annotation requires labelMarkdown")
+            params: Dict[str, Any] = {
+                "nodeId": node_id,
+                "labelMarkdown": label_markdown,
+            }
+            annotation_id = arguments.get("annotationId")
+            if annotation_id is not None:
+                params["annotationId"] = annotation_id
+            category_id = arguments.get("categoryId")
+            if category_id is not None:
+                params["categoryId"] = category_id
+            properties = arguments.get("properties")
+            if properties is not None:
+                if not isinstance(properties, list):
+                    return err("set_annotation: properties must be an array")
+                params["properties"] = properties
+            result = await send_command("set_annotation", params)
+            return ok(result)
+        except Exception as e:
+            return err(f"Error setting annotation: {e}")
     elif name == "set_multiple_annotations":
-        return _stub(name)
+        try:
+            annotations = arguments.get("annotations")
+            if not annotations:
+                return err("set_multiple_annotations requires annotations")
+            if not isinstance(annotations, list):
+                return err("set_multiple_annotations: annotations must be an array")
+            if len(annotations) == 0:
+                return [TextContent(type="text", text="No annotations provided")]
+            params: Dict[str, Any] = {"annotations": annotations}
+            result = await send_command("set_multiple_annotations", params)
+            typed = result if isinstance(result, dict) else {}
+            annotations_applied = typed.get("annotationsApplied", 0)
+            annotations_failed = typed.get("annotationsFailed", 0)
+            completed_in_chunks = typed.get("completedInChunks", 1)
+            detailed_results = typed.get("results", [])
+            failed_results = [item for item in detailed_results if not item.get("success", False)]
+            response_text = f"Annotation process completed:\n- {annotations_applied} of {len(annotations)} successfully applied\n- {annotations_failed} failed\n- Processed in {completed_in_chunks} batches"
+            if failed_results:
+                failed_text = "\n\nNodes that failed:\n" + "\n".join(
+                    f"- {item.get('nodeId', 'unknown')}: {item.get('error', 'Unknown error')}"
+                    for item in failed_results
+                )
+                response_text += failed_text
+            return [TextContent(type="text", text=response_text)]
+        except Exception as e:
+            return err(f"Error setting multiple annotations: {e}")
     elif name == "scan_text_nodes":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            if node_id is None:
+                return err("scan_text_nodes requires nodeId")
+            params: Dict[str, Any] = {
+                "nodeId": node_id,
+                "useChunking": arguments.get("useChunking", True) if arguments.get("useChunking") is not None else True,
+                "chunkSize": arguments.get("chunkSize", 10) if arguments.get("chunkSize") is not None else 10,
+            }
+            result = await send_command("scan_text_nodes", params)
+            typed = result if isinstance(result, dict) else {}
+            if "chunks" in typed:
+                total_nodes = typed.get("totalNodes", 0)
+                chunks = typed.get("chunks", 0)
+                text_nodes = typed.get("textNodes", [])
+                return [
+                    TextContent(type="text", text="Starting text node scanning. This may take a moment for large designs..."),
+                    TextContent(type="text", text=f"\nScan completed:\n- Found {total_nodes} text nodes\n- Processed in {chunks} chunks"),
+                    TextContent(type="text", text=json.dumps(text_nodes, indent=2)),
+                ]
+            return [
+                TextContent(type="text", text="Starting text node scanning. This may take a moment for large designs..."),
+                TextContent(type="text", text=json.dumps(result, indent=2)),
+            ]
+        except Exception as e:
+            return err(f"Error scanning text nodes: {e}")
     elif name == "scan_nodes_by_types":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            types = arguments.get("types")
+            if node_id is None:
+                return err("scan_nodes_by_types requires nodeId")
+            if types is None:
+                return err("scan_nodes_by_types requires types")
+            if not isinstance(types, list):
+                return err("scan_nodes_by_types: types must be an array")
+            params: Dict[str, Any] = {
+                "nodeId": node_id,
+                "types": types,
+            }
+            result = await send_command("scan_nodes_by_types", params)
+            typed = result if isinstance(result, dict) else {}
+            if "matchingNodes" in typed:
+                count = typed.get("count", 0)
+                searched_types = typed.get("searchedTypes", [])
+                matching_nodes = typed.get("matchingNodes", [])
+                return [
+                    TextContent(type="text", text=f"Starting node type scanning for types: {', '.join(searched_types)}..."),
+                    TextContent(type="text", text=f"Scan completed: Found {count} nodes matching types: {', '.join(searched_types)}"),
+                    TextContent(type="text", text=json.dumps(matching_nodes, indent=2)),
+                ]
+            return [
+                TextContent(type="text", text=f"Starting node type scanning for types: {', '.join(types)}..."),
+                TextContent(type="text", text=json.dumps(result, indent=2)),
+            ]
+        except Exception as e:
+            return err(f"Error scanning nodes by types: {e}")
     elif name == "get_instance_overrides":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            params: Dict[str, Any] = {}
+            if node_id is not None:
+                params["instanceNodeId"] = node_id
+            result = await send_command("get_instance_overrides", params)
+            typed = result if isinstance(result, dict) else {}
+            success = typed.get("success", False)
+            message = typed.get("message", "")
+            if success:
+                return ok(f"Successfully got instance overrides: {message}")
+            return err(f"Failed to get instance overrides: {message}")
+        except Exception as e:
+            return err(f"Error getting instance overrides: {e}")
     elif name == "set_instance_overrides":
-        return _stub(name)
+        try:
+            source_node_id = arguments.get("sourceNodeId")
+            target_node_ids = arguments.get("targetNodeIds")
+            if source_node_id is None:
+                return err("set_instance_overrides requires sourceNodeId")
+            if target_node_ids is None:
+                return err("set_instance_overrides requires targetNodeIds")
+            if not isinstance(target_node_ids, list):
+                return err("set_instance_overrides: targetNodeIds must be an array")
+            params: Dict[str, Any] = {
+                "sourceInstanceId": source_node_id,
+                "targetNodeIds": target_node_ids,
+            }
+            result = await send_command("set_instance_overrides", params)
+            typed = result if isinstance(result, dict) else {}
+            success = typed.get("success", False)
+            message = typed.get("message", "")
+            if success:
+                total_count = typed.get("totalCount", 0)
+                results = typed.get("results", [])
+                success_count = len([r for r in results if r.get("success", False)])
+                return ok(f"Successfully applied {total_count} overrides to {success_count} instances.")
+            return err(f"Failed to set instance overrides: {message}")
+        except Exception as e:
+            return err(f"Error setting instance overrides: {e}")
     elif name == "set_default_connector":
-        return _stub(name)
+        try:
+            connector_id = arguments.get("connectorId")
+            params: Dict[str, Any] = {}
+            if connector_id is not None:
+                params["connectorId"] = connector_id
+            result = await send_command("set_default_connector", params)
+            return ok(f"Default connector set: {json.dumps(result)}")
+        except Exception as e:
+            return err(f"Error setting default connector: {e}")
     elif name == "create_connections":
-        return _stub(name)
+        try:
+            connections = arguments.get("connections")
+            if not connections:
+                return err("create_connections requires connections")
+            if not isinstance(connections, list):
+                return err("create_connections: connections must be an array")
+            if len(connections) == 0:
+                return [TextContent(type="text", text="No connections provided")]
+            params: Dict[str, Any] = {"connections": connections}
+            result = await send_command("create_connections", params)
+            return ok(f"Created {len(connections)} connections: {json.dumps(result)}")
+        except Exception as e:
+            return err(f"Error creating connections: {e}")
     elif name == "set_focus":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            if node_id is None:
+                return err("set_focus requires nodeId")
+            result = await send_command("set_focus", {"nodeId": node_id})
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            node_id_result = typed.get("id", node_id)
+            return ok(f'Focused on node "{node_name}" (ID: {node_id_result})')
+        except Exception as e:
+            return err(f"Error setting focus: {e}")
     elif name == "set_selections":
-        return _stub(name)
+        try:
+            node_ids = arguments.get("nodeIds")
+            if not node_ids:
+                return err("set_selections requires nodeIds")
+            if not isinstance(node_ids, list):
+                return err("set_selections: nodeIds must be an array")
+            result = await send_command("set_selections", {"nodeIds": node_ids})
+            typed = result if isinstance(result, dict) else {}
+            selected_nodes = typed.get("selectedNodes", [])
+            count = typed.get("count", len(node_ids))
+            nodes_text = ', '.join(f'"{node.get("name", node.get("id", "unknown"))}" ({node.get("id", "unknown")})' for node in selected_nodes)
+            return ok(f"Selected {count} nodes: {nodes_text}")
+        except Exception as e:
+            return err(f"Error setting selections: {e}")
     elif name == "join_channel":
         try:
             channel = arguments.get("channel", "")
