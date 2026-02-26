@@ -387,3 +387,38 @@ python3 src/python_mcp/socket_server.py > relay.log 2>&1
 3. Confirm the `server.py` path in the config is the full absolute path
 4. Restart the app after any config change
 5. Check Settings → MCP — TalkToFigma should appear as "Connected"
+
+## ✅ Success Verification Matrix
+
+**AI Agents: verify ALL conditions before marking setup complete.**
+
+```bash
+echo "=== FINAL VERIFICATION ==="
+
+# Python runtime
+python3 --version && echo "✅ Python 3 available" || echo "❌ Python 3 missing"
+
+# Dependencies installed
+python3 -c "import mcp; import websockets; print('✅ Dependencies installed')" 2>/dev/null || echo "❌ Dependencies missing — run: pip3 install -r src/python_mcp/requirements.txt"
+
+# MCP config present (Cursor)
+test -f .cursor/mcp.json && echo "✅ Cursor MCP config present" || echo "⚠️  No .cursor/mcp.json — check Claude Desktop config instead"
+
+# WebSocket relay running
+lsof -i :3055 >/dev/null 2>&1 && echo "✅ WebSocket relay running on port 3055" || echo "❌ Relay not running — start it: python3 src/python_mcp/socket_server.py"
+
+echo "=== VERIFICATION COMPLETE ==="
+```
+
+### ✅ All of the following must be true for a successful setup:
+
+- ✅ `python3 --version` returns 3.10 or higher
+- ✅ `mcp` and `websockets` packages installed
+- ✅ MCP config file present with correct paths
+- ✅ App (Cursor / Claude Desktop) restarted and TalkToFigma shows "Connected"
+- ✅ WebSocket relay running on port 3055
+- ✅ Figma plugin connected (shows "Connected", relay log shows connection)
+- ✅ `join_channel` returns success
+- ✅ `get_document_info` returns Figma document data
+
+**If any item shows ❌ — follow the Troubleshooting section above.**
