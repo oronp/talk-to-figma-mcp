@@ -1070,9 +1070,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     elif name == "get_annotations":
         try:
             params: Dict[str, Any] = {}
-            if "nodeId" in arguments:
+            if arguments and "nodeId" in arguments:
                 params["nodeId"] = arguments["nodeId"]
-            if "includeCategories" in arguments:
+            if arguments and "includeCategories" in arguments:
                 params["includeCategories"] = arguments["includeCategories"]
             result = await send_command("get_annotations", params)
             return ok(result)
