@@ -1366,6 +1366,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 return err("move_node requires x")
             if y is None:
                 return err("move_node requires y")
+            if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+                return err("move_node: x and y must be numbers")
             result = await send_command("move_node", {"nodeId": node_id, "x": x, "y": y})
             typed = result if isinstance(result, dict) else {}
             node_name = typed.get("name", node_id)
@@ -1383,6 +1385,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 return err("resize_node requires width")
             if height is None:
                 return err("resize_node requires height")
+            if not isinstance(width, (int, float)) or not isinstance(height, (int, float)):
+                return err("resize_node: width and height must be numbers")
             result = await send_command("resize_node", {"nodeId": node_id, "width": width, "height": height})
             typed = result if isinstance(result, dict) else {}
             node_name = typed.get("name", node_id)
@@ -1417,15 +1421,25 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 return err("set_padding requires nodeId")
             params: Dict[str, Any] = {"nodeId": node_id}
             top = arguments.get("top")
+            right = arguments.get("right")
+            bottom = arguments.get("bottom")
+            left = arguments.get("left")
+            if top is not None and not isinstance(top, (int, float)):
+                return err("set_padding: top must be a number")
+            if right is not None and not isinstance(right, (int, float)):
+                return err("set_padding: right must be a number")
+            if bottom is not None and not isinstance(bottom, (int, float)):
+                return err("set_padding: bottom must be a number")
+            if left is not None and not isinstance(left, (int, float)):
+                return err("set_padding: left must be a number")
+            if not any(v is not None for v in (top, right, bottom, left)):
+                return err("set_padding requires at least one of: top, right, bottom, left")
             if top is not None:
                 params["paddingTop"] = top
-            right = arguments.get("right")
             if right is not None:
                 params["paddingRight"] = right
-            bottom = arguments.get("bottom")
             if bottom is not None:
                 params["paddingBottom"] = bottom
-            left = arguments.get("left")
             if left is not None:
                 params["paddingLeft"] = left
             result = await send_command("set_padding", params)
@@ -1456,6 +1470,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             counter = arguments.get("counterAxisAlignItems")
             if counter is not None:
                 params["counterAxisAlignItems"] = counter
+            if primary is None and counter is None:
+                return err("set_axis_align requires at least one of: primaryAxisAlignItems, counterAxisAlignItems")
             result = await send_command("set_axis_align", params)
             typed = result if isinstance(result, dict) else {}
             node_name = typed.get("name", node_id)
@@ -1480,6 +1496,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             v_sizing = arguments.get("layoutSizingVertical")
             if v_sizing is not None:
                 params["layoutSizingVertical"] = v_sizing
+            if h_sizing is None and v_sizing is None:
+                return err("set_layout_sizing requires at least one of: layoutSizingHorizontal, layoutSizingVertical")
             result = await send_command("set_layout_sizing", params)
             typed = result if isinstance(result, dict) else {}
             node_name = typed.get("name", node_id)
@@ -1500,9 +1518,13 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 return err("set_item_spacing requires nodeId")
             if spacing is None:
                 return err("set_item_spacing requires itemSpacing")
+            if not isinstance(spacing, (int, float)):
+                return err("set_item_spacing: itemSpacing must be a number")
             params: Dict[str, Any] = {"nodeId": node_id, "itemSpacing": spacing}
             counter_spacing = arguments.get("counterAxisSpacing")
             if counter_spacing is not None:
+                if not isinstance(counter_spacing, (int, float)):
+                    return err("set_item_spacing: counterAxisSpacing must be a number")
                 params["counterAxisSpacing"] = counter_spacing
             result = await send_command("set_item_spacing", params)
             typed = result if isinstance(result, dict) else {}
