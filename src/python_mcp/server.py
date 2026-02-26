@@ -1093,7 +1093,14 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     elif name == "set_selections":
         return _stub(name)
     elif name == "join_channel":
-        return _stub(name)
+        try:
+            channel = arguments.get("channel", "")
+            if not channel:
+                return err("Please provide a channel name to join")
+            await join_channel(channel)
+            return ok(f"Successfully joined channel: {channel}")
+        except Exception as e:
+            return err(f"Error joining channel: {e}")
     else:
         return err(f"Unknown tool: {name}")
 

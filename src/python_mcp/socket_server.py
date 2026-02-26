@@ -84,7 +84,7 @@ async def handler(ws: ServerConnection) -> None:
                                     "channel": channel_name,
                                 }))
                             except Exception:
-                                pass
+                                channel_clients.discard(client)
 
                 # ── MESSAGE ───────────────────────────────────────────────────
                 elif data.get("type") == "message":
@@ -118,7 +118,7 @@ async def handler(ws: ServerConnection) -> None:
                                 "channel": channel_name,
                             }))
                         except Exception:
-                            pass
+                            channel_clients.discard(client)
 
             except json.JSONDecodeError as exc:
                 print(f"Error handling message: {exc}", flush=True)
@@ -144,7 +144,7 @@ async def handler(ws: ServerConnection) -> None:
                             "channel": channel_name,
                         }))
                     except Exception:
-                        pass
+                        clients.discard(client)
 
 
 async def main() -> None:
