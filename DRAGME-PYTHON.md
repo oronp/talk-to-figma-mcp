@@ -129,3 +129,165 @@ graph TD
     classDef pending fill:#6b7280,stroke:#4b5563,stroke-width:2px,color:#fff
     classDef failed fill:#ef4444,stroke:#dc2626,stroke-width:2px,color:#fff
 ```
+
+## 🚀 Step-by-Step Setup
+
+---
+
+### Step 1: Verify or Install Python 3
+
+```bash
+python3 --version
+```
+
+Expected output: `Python 3.10.x` or higher.
+
+**✅ If Python 3.10+ is shown** — proceed to Step 2.
+
+**❌ If command not found or version is below 3.10:**
+
+**macOS:**
+```bash
+# Option A: via Homebrew (recommended if you have it)
+brew install python3
+
+# Option B: Download installer from https://www.python.org/downloads/
+# After installing, reopen your terminal and run python3 --version again
+```
+
+> **Windows note:** Download from https://www.python.org/downloads/ and tick "Add Python to PATH" during installation. Use `python` instead of `python3` everywhere in this guide.
+
+**CHECKPOINT 1** ✅ — `python3 --version` shows 3.10 or higher.
+
+**AI AGENTS**: Update progress diagram — mark `🐍 Python Check` as **completed**, `📦 Install Dependencies` as **current**.
+
+---
+
+### Step 2: Install Dependencies
+
+From the **repo root** directory:
+
+```bash
+pip3 install -r src/python_mcp/requirements.txt
+```
+
+Expected output: Lines ending with `Successfully installed mcp-... websockets-...`
+
+**⚠️ If you see a permissions error:**
+```bash
+pip3 install --user -r src/python_mcp/requirements.txt
+```
+
+> **Windows note:** Use `pip` instead of `pip3`.
+
+**CHECKPOINT 2** ✅ — No errors shown. Installation succeeded.
+
+**AI AGENTS**: Update progress diagram — mark `📦 Install Dependencies` as **completed**, `⚙️ Configure MCP` as **current**.
+
+---
+
+### Step 3: Configure MCP in Cursor or Claude Desktop
+
+First, find your Python 3 path:
+
+```bash
+which python3
+# Example output: /usr/local/bin/python3
+```
+
+> **Windows note:** Run `where python` in Command Prompt. Use the path shown.
+
+Then find the full path to `server.py` in this repo:
+
+```bash
+realpath src/python_mcp/server.py
+# Example output: /Users/yourname/projects/talk-to-figma-mcp/src/python_mcp/server.py
+```
+
+**For Cursor:** Create or edit `.cursor/mcp.json` in this project:
+
+```json
+{
+  "mcpServers": {
+    "TalkToFigma": {
+      "command": "/usr/local/bin/python3",
+      "args": ["/Users/yourname/projects/talk-to-figma-mcp/src/python_mcp/server.py"]
+    }
+  }
+}
+```
+
+**For Claude Desktop:** Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+
+```json
+{
+  "mcpServers": {
+    "TalkToFigma": {
+      "command": "/usr/local/bin/python3",
+      "args": ["/Users/yourname/projects/talk-to-figma-mcp/src/python_mcp/server.py"]
+    }
+  }
+}
+```
+
+> **Windows note:** Config file is at `%APPDATA%\Claude\claude_desktop_config.json`. Use `python` as the command and Windows-style paths (e.g., `C:\\Users\\yourname\\...`).
+
+After saving the config, **restart Cursor or Claude Desktop** to pick up the change.
+
+**CHECKPOINT 3** ✅ — MCP config file saved and app restarted. Verify TalkToFigma shows as "Connected" in Settings → MCP.
+
+**AI AGENTS**: Update progress diagram — mark `⚙️ Configure MCP` as **completed**, `🌐 Start WebSocket Relay` as **current**.
+
+---
+
+### Step 4: Start the WebSocket Relay Server
+
+Open a **dedicated terminal** and run:
+
+```bash
+python3 src/python_mcp/socket_server.py > relay.log 2>&1
+```
+
+This terminal will become unresponsive — that means the relay is running correctly. **Keep it open.**
+
+To monitor logs in a second terminal:
+```bash
+tail -f relay.log
+```
+
+You should see: `WebSocket server running on port 3055`
+
+To stop the relay later: press `Ctrl+C` in its terminal.
+
+**Verify the relay is running:**
+```bash
+lsof -i :3055 && echo "✅ Relay running on port 3055" || echo "❌ Relay not running"
+```
+
+> **Windows note:** Use `netstat -an | findstr 3055` to check the port.
+
+**CHECKPOINT 4** ✅ — `relay.log` shows "WebSocket server running on port 3055".
+
+**AI AGENTS**: Update progress diagram — mark `🌐 Start WebSocket Relay` as **completed**, `🔌 Figma Plugin` as **current**.
+
+---
+
+### Step 5: Install and Connect the Figma Plugin
+
+#### Install the Plugin
+
+1. Open the plugin page: https://www.figma.com/community/plugin/1485687494525374295/cursor-talk-to-figma-mcp-plugin
+2. Click **"Install"**
+
+#### Connect to the Relay
+
+1. Open any Figma file
+2. Go to `Plugins` menu → `Cursor Talk to Figma MCP Plugin`
+3. In the plugin panel, set the WebSocket URL to: `ws://localhost:3055`
+4. Click **"Connect"**
+
+The plugin should show a **"Connected"** status. Your relay terminal will log a new connection.
+
+**CHECKPOINT 5** ✅ — Plugin shows "Connected". Relay log shows a new connection message.
+
+**AI AGENTS**: Update progress diagram — mark `🔌 Figma Plugin` as **completed**, `🧪 Integration Test` as **current**.
