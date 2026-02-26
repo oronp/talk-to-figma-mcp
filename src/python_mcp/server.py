@@ -1234,6 +1234,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             b = arguments.get("b")
             if node_id is None or r is None or g is None or b is None:
                 return err("set_fill_color requires nodeId, r, g, and b")
+            if not all(isinstance(v, (int, float)) for v in (r, g, b)):
+                return err("set_fill_color: r, g, b must be numbers in range 0-1")
             a_val = arguments.get("a")
             a = a_val if a_val is not None else 1
             result = await send_command("set_fill_color", {
@@ -1253,6 +1255,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             b = arguments.get("b")
             if node_id is None or r is None or g is None or b is None:
                 return err("set_stroke_color requires nodeId, r, g, and b")
+            if not all(isinstance(v, (int, float)) for v in (r, g, b)):
+                return err("set_stroke_color: r, g, b must be numbers in range 0-1")
             a_val = arguments.get("a")
             a = a_val if a_val is not None else 1
             weight_val = arguments.get("weight")
@@ -1302,42 +1306,25 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             text = arguments.get("text")
             if node_id is None:
                 return err("set_multiple_text_contents requires nodeId")
-            if not text:
+            if text is None:
+                return err("set_multiple_text_contents requires text")
+            if len(text) == 0:
                 return [TextContent(type="text", text="No text provided")]
-            total = len(text)
-            chunk_size = 5
-            all_results: List[Any] = []
-            chunks_processed = 0
-            for chunk_start in range(0, total, chunk_size):
-                chunk = text[chunk_start: chunk_start + chunk_size]
-                chunk_result = await send_command("set_multiple_text_contents", {
-                    "nodeId": node_id,
-                    "text": chunk,
-                })
-                all_results.append(chunk_result)
-                chunks_processed += 1
-            replacements_applied = 0
-            replacements_failed = 0
-            failed_nodes: List[str] = []
-            for chunk_result in all_results:
-                if isinstance(chunk_result, dict):
-                    replacements_applied += chunk_result.get("replacementsApplied", 0)
-                    replacements_failed += chunk_result.get("replacementsFailed", 0)
-                    for item in chunk_result.get("results", []):
-                        if isinstance(item, dict) and not item.get("success"):
-                            failed_nodes.append(f"- {item.get('nodeId', '?')}: {item.get('error', 'Unknown error')}")
-            progress_text = (
-                f"Text replacement completed:\n"
-                f"- {replacements_applied} of {total} successfully updated\n"
-                f"- {replacements_failed} failed\n"
-                f"- Processed in {chunks_processed} batches"
-            )
-            if failed_nodes:
-                progress_text += "\n\nNodes that failed:\n" + "\n".join(failed_nodes)
-            return [
-                TextContent(type="text", text=f"Starting text replacement for {total} nodes. This will be processed in batches of {chunk_size}..."),
-                TextContent(type="text", text=progress_text),
-            ]
+            result = await send_command("set_multiple_text_contents", {
+                "nodeId": node_id,
+                "text": text,
+            })
+            typed = result if isinstance(result, dict) else {}
+            replacements_applied = typed.get("replacementsApplied", 0)
+            replacements_failed = typed.get("replacementsFailed", 0)
+            total = typed.get("totalReplacements", len(text))
+            return ok({
+                "success": typed.get("success", True),
+                "replacementsApplied": replacements_applied,
+                "replacementsFailed": replacements_failed,
+                "totalReplacements": total,
+                "completedInChunks": typed.get("completedInChunks", 0),
+            })
         except Exception as e:
             return err(f"Error setting multiple text contents: {e}")
     elif name == "export_node_as_image":
@@ -1355,7 +1342,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 "scale": scale,
             })
             typed = result if isinstance(result, dict) else {}
-            image_data = typed.get("imageData", "")
+            image_data = typed.get("imageData")
+            if not image_data:
+                return err("export_node_as_image: plugin returned no image data")
             mime_type = typed.get("mimeType", "image/png")
             return [types.ImageContent(type="image", data=image_data, mimeType=mime_type)]
         except Exception as e:
