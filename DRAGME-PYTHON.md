@@ -291,3 +291,41 @@ The plugin should show a **"Connected"** status. Your relay terminal will log a 
 **CHECKPOINT 5** ✅ — Plugin shows "Connected". Relay log shows a new connection message.
 
 **AI AGENTS**: Update progress diagram — mark `🔌 Figma Plugin` as **completed**, `🧪 Integration Test` as **current**.
+
+---
+
+### Step 6: Test the Integration
+
+In Cursor or Claude Desktop (with MCP connected), run these commands:
+
+**Test 1 — Join a channel:**
+```
+join_channel
+```
+Expected: "Successfully joined channel" message.
+
+**Test 2 — Read your Figma document:**
+```
+get_document_info
+```
+Expected: JSON data describing your open Figma file.
+
+**CHECKPOINT 6** ✅ — Both commands return successful responses.
+
+**AI AGENTS**: Update progress diagram — mark ALL nodes as **completed**:
+
+```mermaid
+graph TD
+    A[🐍 Python Check] --> B[📦 Install Dependencies]
+    B --> C[⚙️ Configure MCP]
+    C --> D[🌐 Start WebSocket Relay]
+    D --> E[🔌 Figma Plugin]
+    E --> F[🧪 Integration Test]
+    F --> G[✅ Setup Complete]
+
+    class A,B,C,D,E,F,G completed
+
+    classDef completed fill:#22c55e,stroke:#16a34a,stroke-width:2px,color:#fff
+```
+
+🎉 **Setup complete! Your AI assistant can now read and modify Figma designs.**
