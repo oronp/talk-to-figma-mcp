@@ -839,6 +839,10 @@ ALL_TOOLS: List[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
+                "nodeId": {
+                    "type": "string",
+                    "description": "ID of the node to add annotations to (optional)",
+                },
                 "annotations": {
                     "type": "array",
                     "items": {"type": "object"},
@@ -903,9 +907,9 @@ ALL_TOOLS: List[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
-                "sourceNodeId": {
+                "sourceInstanceId": {
                     "type": "string",
-                    "description": "ID of the source instance to copy overrides from",
+                    "description": "ID of the source component instance",
                 },
                 "targetNodeIds": {
                     "type": "array",
@@ -913,7 +917,7 @@ ALL_TOOLS: List[Tool] = [
                     "description": "IDs of target instances to apply overrides to",
                 },
             },
-            "required": ["sourceNodeId", "targetNodeIds"],
+            "required": ["sourceInstanceId", "targetNodeIds"],
         },
     ),
     Tool(
@@ -1562,6 +1566,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return err(f"Error setting annotation: {e}")
     elif name == "set_multiple_annotations":
         try:
+            node_id = arguments.get("nodeId")
             annotations = arguments.get("annotations")
             if not annotations:
                 return err("set_multiple_annotations requires annotations")
@@ -1569,7 +1574,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 return err("set_multiple_annotations: annotations must be an array")
             if len(annotations) == 0:
                 return [TextContent(type="text", text="No annotations provided")]
-            params: Dict[str, Any] = {"annotations": annotations}
+            params: Dict[str, Any] = {"nodeId": node_id, "annotations": annotations}
             result = await send_command("set_multiple_annotations", params)
             typed = result if isinstance(result, dict) else {}
             annotations_applied = typed.get("annotationsApplied", 0)
@@ -1662,10 +1667,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return err(f"Error getting instance overrides: {e}")
     elif name == "set_instance_overrides":
         try:
-            source_node_id = arguments.get("sourceNodeId")
+            source_node_id = arguments.get("sourceInstanceId")
             target_node_ids = arguments.get("targetNodeIds")
             if source_node_id is None:
-                return err("set_instance_overrides requires sourceNodeId")
+                return err("set_instance_overrides requires sourceInstanceId")
             if target_node_ids is None:
                 return err("set_instance_overrides requires targetNodeIds")
             if not isinstance(target_node_ids, list):
