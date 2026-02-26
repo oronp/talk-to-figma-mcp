@@ -1238,17 +1238,139 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return err(f"Error deleting multiple nodes: {e}")
     # ── Group C ──────────────────────────────────────────────────────────────
     elif name == "set_fill_color":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            r = arguments.get("r")
+            g = arguments.get("g")
+            b = arguments.get("b")
+            if node_id is None or r is None or g is None or b is None:
+                return err("set_fill_color requires nodeId, r, g, and b")
+            a_val = arguments.get("a")
+            a = a_val if a_val is not None else 1
+            result = await send_command("set_fill_color", {
+                "nodeId": node_id,
+                "color": {"r": r, "g": g, "b": b, "a": a},
+            })
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            return [TextContent(type="text", text=f'Set fill color of node "{node_name}" to RGBA({r}, {g}, {b}, {a})')]
+        except Exception as e:
+            return err(f"Error setting fill color: {e}")
     elif name == "set_stroke_color":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            r = arguments.get("r")
+            g = arguments.get("g")
+            b = arguments.get("b")
+            if node_id is None or r is None or g is None or b is None:
+                return err("set_stroke_color requires nodeId, r, g, and b")
+            a_val = arguments.get("a")
+            a = a_val if a_val is not None else 1
+            weight_val = arguments.get("weight")
+            weight = weight_val if weight_val is not None else 1
+            result = await send_command("set_stroke_color", {
+                "nodeId": node_id,
+                "color": {"r": r, "g": g, "b": b, "a": a},
+                "weight": weight,
+            })
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            return [TextContent(type="text", text=f'Set stroke color of node "{node_name}" to RGBA({r}, {g}, {b}, {a}) with weight {weight}')]
+        except Exception as e:
+            return err(f"Error setting stroke color: {e}")
     elif name == "set_corner_radius":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            radius = arguments.get("radius")
+            if node_id is None or radius is None:
+                return err("set_corner_radius requires nodeId and radius")
+            corners = arguments.get("corners")
+            result = await send_command("set_corner_radius", {
+                "nodeId": node_id,
+                "radius": radius,
+                "corners": corners if corners is not None else [True, True, True, True],
+            })
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            return [TextContent(type="text", text=f'Set corner radius of node "{node_name}" to {radius}px')]
+        except Exception as e:
+            return err(f"Error setting corner radius: {e}")
     elif name == "set_text_content":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            text = arguments.get("text")
+            if node_id is None or text is None:
+                return err("set_text_content requires nodeId and text")
+            result = await send_command("set_text_content", {"nodeId": node_id, "text": text})
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            return [TextContent(type="text", text=f'Updated text content of node "{node_name}" to "{text}"')]
+        except Exception as e:
+            return err(f"Error setting text content: {e}")
     elif name == "set_multiple_text_contents":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            text = arguments.get("text")
+            if node_id is None:
+                return err("set_multiple_text_contents requires nodeId")
+            if not text:
+                return [TextContent(type="text", text="No text provided")]
+            total = len(text)
+            chunk_size = 5
+            all_results: List[Any] = []
+            chunks_processed = 0
+            for chunk_start in range(0, total, chunk_size):
+                chunk = text[chunk_start: chunk_start + chunk_size]
+                chunk_result = await send_command("set_multiple_text_contents", {
+                    "nodeId": node_id,
+                    "text": chunk,
+                })
+                all_results.append(chunk_result)
+                chunks_processed += 1
+            replacements_applied = 0
+            replacements_failed = 0
+            failed_nodes: List[str] = []
+            for chunk_result in all_results:
+                if isinstance(chunk_result, dict):
+                    replacements_applied += chunk_result.get("replacementsApplied", 0)
+                    replacements_failed += chunk_result.get("replacementsFailed", 0)
+                    for item in chunk_result.get("results", []):
+                        if isinstance(item, dict) and not item.get("success"):
+                            failed_nodes.append(f"- {item.get('nodeId', '?')}: {item.get('error', 'Unknown error')}")
+            progress_text = (
+                f"Text replacement completed:\n"
+                f"- {replacements_applied} of {total} successfully updated\n"
+                f"- {replacements_failed} failed\n"
+                f"- Processed in {chunks_processed} batches"
+            )
+            if failed_nodes:
+                progress_text += "\n\nNodes that failed:\n" + "\n".join(failed_nodes)
+            return [
+                TextContent(type="text", text=f"Starting text replacement for {total} nodes. This will be processed in batches of {chunk_size}..."),
+                TextContent(type="text", text=progress_text),
+            ]
+        except Exception as e:
+            return err(f"Error setting multiple text contents: {e}")
     elif name == "export_node_as_image":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            if node_id is None:
+                return err("export_node_as_image requires nodeId")
+            fmt_val = arguments.get("format")
+            fmt = fmt_val if fmt_val is not None else "PNG"
+            scale_val = arguments.get("scale")
+            scale = scale_val if scale_val is not None else 1
+            result = await send_command("export_node_as_image", {
+                "nodeId": node_id,
+                "format": fmt,
+                "scale": scale,
+            })
+            typed = result if isinstance(result, dict) else {}
+            image_data = typed.get("imageData", "")
+            mime_type = typed.get("mimeType", "image/png")
+            return [types.ImageContent(type="image", data=image_data, mimeType=mime_type)]
+        except Exception as e:
+            return err(f"Error exporting node as image: {e}")
     # ── Group D ──────────────────────────────────────────────────────────────
     elif name == "move_node":
         return _stub(name)
