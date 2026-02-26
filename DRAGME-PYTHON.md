@@ -35,3 +35,41 @@ This guide is designed for AI agents to parse and execute autonomously. Each sec
 2. Update the progress diagram at every checkpoint
 3. If a step fails, follow the troubleshooting section
 4. Always validate checkpoints before continuing
+
+## 📋 System Environment Detection
+
+**AI AGENTS**: Run these commands first and store results for later decisions.
+
+```bash
+echo "=== PYTHON ENVIRONMENT DETECTION ==="
+
+# 1. Operating System
+OS_TYPE=$(uname -s)
+echo "OS_TYPE: $OS_TYPE"
+
+# 2. Python 3 availability
+PYTHON_AVAILABLE=$(which python3 >/dev/null 2>&1 && echo "YES" || echo "NO")
+if [ "$PYTHON_AVAILABLE" = "YES" ]; then
+    PYTHON_VERSION=$(python3 --version 2>&1)
+    echo "PYTHON_VERSION: $PYTHON_VERSION"
+else
+    echo "PYTHON_AVAILABLE: NO"
+fi
+
+# 3. pip3 availability
+PIP_AVAILABLE=$(which pip3 >/dev/null 2>&1 && echo "YES" || echo "NO")
+if [ "$PIP_AVAILABLE" = "YES" ]; then
+    PIP_VERSION=$(pip3 --version 2>&1)
+    echo "PIP_VERSION: $PIP_VERSION"
+else
+    echo "PIP_AVAILABLE: NO"
+fi
+
+# 4. Git availability
+GIT_AVAILABLE=$(which git >/dev/null 2>&1 && echo "YES" || echo "NO")
+echo "GIT_AVAILABLE: $GIT_AVAILABLE"
+
+echo "=== DETECTION COMPLETE ==="
+```
+
+> **Windows note:** Replace `python3` with `python` and `pip3` with `pip` in all commands throughout this guide.
