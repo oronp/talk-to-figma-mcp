@@ -537,14 +537,14 @@ ALL_TOOLS: List[Tool] = [
         inputSchema={
             "type": "object",
             "properties": {
-                "componentId": {
+                "componentKey": {
                     "type": "string",
-                    "description": "ID of the component to instantiate",
+                    "description": "Key of the component to instantiate",
                 },
                 "x": {"type": "number", "description": "X position (optional)"},
                 "y": {"type": "number", "description": "Y position (optional)"},
             },
-            "required": ["componentId"],
+            "required": ["componentKey"],
         },
     ),
     Tool(
@@ -1174,8 +1174,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 "x": x,
                 "y": y,
                 "text": text,
-                "fontSize": arguments.get("fontSize") or 14,
-                "fontWeight": arguments.get("fontWeight") or 400,
+                "fontSize": arguments.get("fontSize") if arguments.get("fontSize") is not None else 14,
+                "fontWeight": arguments.get("fontWeight") if arguments.get("fontWeight") is not None else 400,
                 "fontColor": arguments.get("fontColor") or {"r": 0, "g": 0, "b": 0, "a": 1},
                 "name": arguments.get("name") or "Text",
             }
@@ -1188,9 +1188,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return err(f"Error creating text: {e}")
     elif name == "create_component_instance":
         try:
-            component_id = arguments.get("componentId")
+            component_id = arguments.get("componentKey")
             if not component_id:
-                return err("create_component_instance requires componentId")
+                return err("create_component_instance requires componentKey")
             params: Dict[str, Any] = {"componentKey": component_id}
             x = arguments.get("x")
             if x is not None:
