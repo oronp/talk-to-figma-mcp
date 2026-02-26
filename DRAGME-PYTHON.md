@@ -329,3 +329,61 @@ graph TD
 ```
 
 🎉 **Setup complete! Your AI assistant can now read and modify Figma designs.**
+
+## 🔍 Troubleshooting
+
+### Python Not Found
+
+```bash
+# macOS: install via Homebrew
+brew install python3
+
+# macOS: or download from python.org
+# https://www.python.org/downloads/
+
+# After installing, open a new terminal and retry:
+python3 --version
+```
+
+---
+
+### pip3 Fails — Permission Error
+
+```bash
+# Use --user flag to install to your home directory
+pip3 install --user -r src/python_mcp/requirements.txt
+```
+
+---
+
+### Port 3055 Already in Use
+
+```bash
+# Find and kill the process using port 3055
+lsof -ti:3055 | xargs kill -9 2>/dev/null || true
+
+# Wait 2 seconds, then restart the relay
+python3 src/python_mcp/socket_server.py > relay.log 2>&1
+```
+
+> **Windows note:** Run `netstat -ano | findstr 3055` to find the PID, then `taskkill /PID <pid> /F`.
+
+---
+
+### Figma Plugin Not Connecting
+
+1. Verify the relay is running: `lsof -i :3055`
+2. Check relay.log: `tail relay.log` — look for errors
+3. In the Figma plugin, confirm the URL is exactly `ws://localhost:3055`
+4. Click Disconnect then Connect in the plugin panel
+5. Refresh the Figma page and try again
+
+---
+
+### MCP Not Detected in Cursor / Claude Desktop
+
+1. Verify the config file path is correct (see Step 3 above)
+2. Confirm the `python3` path in the config matches `which python3`
+3. Confirm the `server.py` path in the config is the full absolute path
+4. Restart the app after any config change
+5. Check Settings → MCP — TalkToFigma should appear as "Connected"
