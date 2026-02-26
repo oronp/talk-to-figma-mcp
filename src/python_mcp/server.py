@@ -1011,23 +1011,70 @@ async def list_tools() -> List[Tool]:
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     # ── Group A ──────────────────────────────────────────────────────────────
     if name == "get_document_info":
-        return _stub(name)
+        try:
+            result = await send_command("get_document_info")
+            return ok(result)
+        except Exception as e:
+            return err(f"Error getting document info: {e}")
     elif name == "get_selection":
-        return _stub(name)
+        try:
+            result = await send_command("get_selection")
+            return ok(result)
+        except Exception as e:
+            return err(f"Error getting selection: {e}")
     elif name == "read_my_design":
-        return _stub(name)
+        try:
+            result = await send_command("read_my_design", {})
+            return ok(result)
+        except Exception as e:
+            return err(f"Error getting node info: {e}")
     elif name == "get_node_info":
-        return _stub(name)
+        try:
+            node_id: str = arguments["nodeId"]
+            result = await send_command("get_node_info", {"nodeId": node_id})
+            return ok(filter_figma_node(result))
+        except Exception as e:
+            return err(f"Error getting node info: {e}")
     elif name == "get_nodes_info":
-        return _stub(name)
+        try:
+            node_ids: List[str] = arguments["nodeIds"]
+            results = await asyncio.gather(
+                *[send_command("get_node_info", {"nodeId": nid}) for nid in node_ids]
+            )
+            filtered = [filter_figma_node(r) for r in results]
+            return ok(filtered)
+        except Exception as e:
+            return err(f"Error getting nodes info: {e}")
     elif name == "get_styles":
-        return _stub(name)
+        try:
+            result = await send_command("get_styles")
+            return ok(result)
+        except Exception as e:
+            return err(f"Error getting styles: {e}")
     elif name == "get_local_components":
-        return _stub(name)
+        try:
+            result = await send_command("get_local_components")
+            return ok(result)
+        except Exception as e:
+            return err(f"Error getting local components: {e}")
     elif name == "get_annotations":
-        return _stub(name)
+        try:
+            params: Dict[str, Any] = {}
+            if "nodeId" in arguments:
+                params["nodeId"] = arguments["nodeId"]
+            if "includeCategories" in arguments:
+                params["includeCategories"] = arguments["includeCategories"]
+            result = await send_command("get_annotations", params)
+            return ok(result)
+        except Exception as e:
+            return err(f"Error getting annotations: {e}")
     elif name == "get_reactions":
-        return _stub(name)
+        try:
+            node_ids = arguments["nodeIds"]
+            result = await send_command("get_reactions", {"nodeIds": node_ids})
+            return ok(result)
+        except Exception as e:
+            return err(f"Error getting reactions: {e}")
     # ── Group B ──────────────────────────────────────────────────────────────
     elif name == "create_rectangle":
         return _stub(name)
