@@ -1351,19 +1351,157 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return err(f"Error exporting node as image: {e}")
     # ── Group D ──────────────────────────────────────────────────────────────
     elif name == "move_node":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            x = arguments.get("x")
+            y = arguments.get("y")
+            if node_id is None:
+                return err("move_node requires nodeId")
+            if x is None:
+                return err("move_node requires x")
+            if y is None:
+                return err("move_node requires y")
+            result = await send_command("move_node", {"nodeId": node_id, "x": x, "y": y})
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            return [TextContent(type="text", text=f'Moved node "{node_name}" to position ({x}, {y})')]
+        except Exception as e:
+            return err(f"Error moving node: {e}")
     elif name == "resize_node":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            width = arguments.get("width")
+            height = arguments.get("height")
+            if node_id is None:
+                return err("resize_node requires nodeId")
+            if width is None:
+                return err("resize_node requires width")
+            if height is None:
+                return err("resize_node requires height")
+            result = await send_command("resize_node", {"nodeId": node_id, "width": width, "height": height})
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            return [TextContent(type="text", text=f'Resized node "{node_name}" to width {width} and height {height}')]
+        except Exception as e:
+            return err(f"Error resizing node: {e}")
     elif name == "set_layout_mode":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            layout_mode = arguments.get("layoutMode")
+            if node_id is None:
+                return err("set_layout_mode requires nodeId")
+            if layout_mode is None:
+                return err("set_layout_mode requires layoutMode")
+            layout_wrap_val = arguments.get("layoutWrap")
+            layout_wrap = layout_wrap_val if layout_wrap_val is not None else "NO_WRAP"
+            result = await send_command("set_layout_mode", {
+                "nodeId": node_id,
+                "layoutMode": layout_mode,
+                "layoutWrap": layout_wrap,
+            })
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            wrap_suffix = f" with {layout_wrap_val}" if layout_wrap_val is not None else ""
+            return [TextContent(type="text", text=f'Set layout mode of frame "{node_name}" to {layout_mode}{wrap_suffix}')]
+        except Exception as e:
+            return err(f"Error setting layout mode: {e}")
     elif name == "set_padding":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            if node_id is None:
+                return err("set_padding requires nodeId")
+            params: Dict[str, Any] = {"nodeId": node_id}
+            top = arguments.get("top")
+            if top is not None:
+                params["paddingTop"] = top
+            right = arguments.get("right")
+            if right is not None:
+                params["paddingRight"] = right
+            bottom = arguments.get("bottom")
+            if bottom is not None:
+                params["paddingBottom"] = bottom
+            left = arguments.get("left")
+            if left is not None:
+                params["paddingLeft"] = left
+            result = await send_command("set_padding", params)
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            padding_parts = []
+            if top is not None:
+                padding_parts.append(f"top: {top}")
+            if right is not None:
+                padding_parts.append(f"right: {right}")
+            if bottom is not None:
+                padding_parts.append(f"bottom: {bottom}")
+            if left is not None:
+                padding_parts.append(f"left: {left}")
+            padding_text = f"padding ({', '.join(padding_parts)})" if padding_parts else "padding"
+            return [TextContent(type="text", text=f'Set {padding_text} for frame "{node_name}"')]
+        except Exception as e:
+            return err(f"Error setting padding: {e}")
     elif name == "set_axis_align":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            if node_id is None:
+                return err("set_axis_align requires nodeId")
+            params: Dict[str, Any] = {"nodeId": node_id}
+            primary = arguments.get("primaryAxisAlignItems")
+            if primary is not None:
+                params["primaryAxisAlignItems"] = primary
+            counter = arguments.get("counterAxisAlignItems")
+            if counter is not None:
+                params["counterAxisAlignItems"] = counter
+            result = await send_command("set_axis_align", params)
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            align_parts = []
+            if primary is not None:
+                align_parts.append(f"primary: {primary}")
+            if counter is not None:
+                align_parts.append(f"counter: {counter}")
+            align_text = f"axis alignment ({', '.join(align_parts)})" if align_parts else "axis alignment"
+            return [TextContent(type="text", text=f'Set {align_text} for frame "{node_name}"')]
+        except Exception as e:
+            return err(f"Error setting axis alignment: {e}")
     elif name == "set_layout_sizing":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            if node_id is None:
+                return err("set_layout_sizing requires nodeId")
+            params: Dict[str, Any] = {"nodeId": node_id}
+            h_sizing = arguments.get("horizontalSizing")
+            if h_sizing is not None:
+                params["layoutSizingHorizontal"] = h_sizing
+            v_sizing = arguments.get("verticalSizing")
+            if v_sizing is not None:
+                params["layoutSizingVertical"] = v_sizing
+            result = await send_command("set_layout_sizing", params)
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            sizing_parts = []
+            if h_sizing is not None:
+                sizing_parts.append(f"horizontal: {h_sizing}")
+            if v_sizing is not None:
+                sizing_parts.append(f"vertical: {v_sizing}")
+            sizing_text = f"layout sizing ({', '.join(sizing_parts)})" if sizing_parts else "layout sizing"
+            return [TextContent(type="text", text=f'Set {sizing_text} for frame "{node_name}"')]
+        except Exception as e:
+            return err(f"Error setting layout sizing: {e}")
     elif name == "set_item_spacing":
-        return _stub(name)
+        try:
+            node_id = arguments.get("nodeId")
+            spacing = arguments.get("spacing")
+            if node_id is None:
+                return err("set_item_spacing requires nodeId")
+            if spacing is None:
+                return err("set_item_spacing requires spacing")
+            params: Dict[str, Any] = {"nodeId": node_id, "itemSpacing": spacing}
+            result = await send_command("set_item_spacing", params)
+            typed = result if isinstance(result, dict) else {}
+            node_name = typed.get("name", node_id)
+            return [TextContent(type="text", text=f'Updated spacing for frame "{node_name}": itemSpacing={spacing}')]
+        except Exception as e:
+            return err(f"Error setting item spacing: {e}")
     # ── Group E ──────────────────────────────────────────────────────────────
     elif name == "set_annotation":
         return _stub(name)
