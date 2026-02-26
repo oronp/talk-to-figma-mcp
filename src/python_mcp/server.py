@@ -987,6 +987,31 @@ ALL_TOOLS: List[Tool] = [
         },
     ),
     Tool(
+        name="execute_code",
+        description=(
+            "Execute arbitrary JavaScript code in the Figma plugin context. "
+            "The code runs as the body of an async function with `figma` (full Figma Plugin API) "
+            "and `params` (your data object) in scope. Returns whatever the code returns. "
+            "Use this to run complex, multi-step Figma operations in a single call — ideal for "
+            "skills that create templated designs (e.g. typography systems, component sets)."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "JavaScript code to execute. Runs as the body of: async function(figma, params) { <your code> }. Has full figma.* API access and async/await support.",
+                },
+                "params": {
+                    "type": "object",
+                    "description": "Data to pass into the code as the `params` argument (fonts, sizes, node IDs, etc.)",
+                    "additionalProperties": True,
+                },
+            },
+            "required": ["code"],
+        },
+    ),
+    Tool(
         name="join_channel",
         description="Join a specific channel to communicate with Figma",
         inputSchema={
@@ -1742,6 +1767,19 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             return ok(f"Selected {count} nodes: {nodes_text}")
         except Exception as e:
             return err(f"Error setting selections: {e}")
+    elif name == "execute_code":
+        try:
+            code = arguments.get("code")
+            if not code or not isinstance(code, str) or not code.strip():
+                return err("execute_code requires a non-empty code string")
+            params: Dict[str, Any] = {
+                "code": code,
+                "params": arguments.get("params") or {},
+            }
+            result = await send_command("execute_code", params, timeout_ms=120000)
+            return ok(result)
+        except Exception as e:
+            return err(f"Error executing code: {e}")
     elif name == "join_channel":
         try:
             channel = arguments.get("channel", "")
