@@ -76,7 +76,7 @@ async def handler(ws: ServerConnection) -> None:
 
                     # Notify other members of the channel
                     for client in list(channel_clients):
-                        if client is not ws and client.open:
+                        if client is not ws:
                             try:
                                 await client.send(json.dumps({
                                     "type": "system",
@@ -106,20 +106,19 @@ async def handler(ws: ServerConnection) -> None:
 
                     # Broadcast to every member of the channel (including sender)
                     for client in list(channel_clients):
-                        if client.open:
-                            try:
-                                print(
-                                    f"Broadcasting message to client: {data.get('message')}",
-                                    flush=True,
-                                )
-                                await client.send(json.dumps({
-                                    "type": "broadcast",
-                                    "message": data.get("message"),
-                                    "sender": "You" if client is ws else "User",
-                                    "channel": channel_name,
-                                }))
-                            except Exception:
-                                pass
+                        try:
+                            print(
+                                f"Broadcasting message to client: {data.get('message')}",
+                                flush=True,
+                            )
+                            await client.send(json.dumps({
+                                "type": "broadcast",
+                                "message": data.get("message"),
+                                "sender": "You" if client is ws else "User",
+                                "channel": channel_name,
+                            }))
+                        except Exception:
+                            pass
 
             except json.JSONDecodeError as exc:
                 print(f"Error handling message: {exc}", flush=True)

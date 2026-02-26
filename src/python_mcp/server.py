@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional
 import mcp.server.stdio
 import mcp.types as types
 from mcp.server import Server
+from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
 # ---------------------------------------------------------------------------
@@ -53,11 +54,12 @@ WS_BASE: str = f"ws://{SERVER_URL}" if SERVER_URL == "localhost" else f"wss://{S
 ws_conn: Optional[Any] = None  # websockets.ClientConnection once connected
 pending_requests: Dict[str, asyncio.Future] = {}
 current_channel: Optional[str] = None
+_listen_task: Optional[asyncio.Task] = None
 
 # ---------------------------------------------------------------------------
 # MCP server instance
 # ---------------------------------------------------------------------------
-mcp = Server("TalkToFigmaMCP")
+server = Server("TalkToFigmaMCP")
 
 # ---------------------------------------------------------------------------
 # Utility helpers
@@ -270,7 +272,7 @@ async def connect_to_figma(port: int = 3055) -> None:
     """Connect to the WebSocket relay server and start the background listener."""
     import websockets  # imported here to avoid circular issues at module load
 
-    global ws_conn
+    global ws_conn, _listen_task
 
     if ws_conn is not None:
         logger.info("Already connected to Figma")
@@ -282,7 +284,7 @@ async def connect_to_figma(port: int = 3055) -> None:
     try:
         ws_conn = await websockets.connect(ws_url)
         logger.info("Connected to Figma socket server")
-        asyncio.get_running_loop().create_task(_listen())
+        _listen_task = asyncio.get_running_loop().create_task(_listen())
     except Exception as exc:
         logger.error("Failed to connect to Figma: %s", exc)
         ws_conn = None
@@ -309,7 +311,8 @@ async def send_command(
     """Send a command to Figma via the relay and await the response."""
     if ws_conn is None:
         await connect_to_figma()
-        raise RuntimeError("Not connected to Figma. Attempting to connect...")
+    if ws_conn is None:
+        raise RuntimeError("Not connected to Figma. Is the relay server running?")
 
     is_join = command == "join"
     if not is_join and current_channel is None:
@@ -995,7 +998,7 @@ _TOOL_NAME_SET = {t.name for t in ALL_TOOLS}
 # MCP handler: list_tools
 # ---------------------------------------------------------------------------
 
-@mcp.list_tools()
+@server.list_tools()
 async def list_tools() -> List[Tool]:
     return ALL_TOOLS
 
@@ -1004,7 +1007,7 @@ async def list_tools() -> List[Tool]:
 # MCP handler: call_tool
 # ---------------------------------------------------------------------------
 
-@mcp.call_tool()
+@server.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     # ── Group A ──────────────────────────────────────────────────────────────
     if name == "get_document_info":
@@ -1102,11 +1105,11 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 async def main() -> None:
     await connect_to_figma()
 
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await mcp.run(
+    async with stdio_server() as (read_stream, write_stream):
+        await server.run(
             read_stream,
             write_stream,
-            mcp.create_initialization_options(),
+            server.create_initialization_options(),
         )
 
 
