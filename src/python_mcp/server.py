@@ -495,6 +495,20 @@ ALL_TOOLS: List[Tool] = [
                 "height": {"type": "number", "description": "Height"},
                 "name": {"type": "string", "description": "Name of the frame (optional)"},
                 "parentId": {"type": "string", "description": "Parent node ID (optional)"},
+                "fillColor": {"type": "object", "description": "Fill color as RGBA {r,g,b,a} with 0-1 values"},
+                "strokeColor": {"type": "object", "description": "Stroke color as RGBA {r,g,b,a}"},
+                "strokeWeight": {"type": "number", "description": "Stroke weight in pixels"},
+                "layoutMode": {"type": "string", "description": "Auto layout mode: HORIZONTAL, VERTICAL, or NONE"},
+                "layoutWrap": {"type": "string", "description": "Layout wrap: NO_WRAP or WRAP"},
+                "paddingTop": {"type": "number", "description": "Top padding"},
+                "paddingRight": {"type": "number", "description": "Right padding"},
+                "paddingBottom": {"type": "number", "description": "Bottom padding"},
+                "paddingLeft": {"type": "number", "description": "Left padding"},
+                "primaryAxisAlignItems": {"type": "string", "description": "Primary axis alignment"},
+                "counterAxisAlignItems": {"type": "string", "description": "Counter axis alignment"},
+                "layoutSizingHorizontal": {"type": "string", "description": "Horizontal sizing mode"},
+                "layoutSizingVertical": {"type": "string", "description": "Vertical sizing mode"},
+                "itemSpacing": {"type": "number", "description": "Item spacing in auto layout"},
             },
             "required": ["x", "y", "width", "height"],
         },
@@ -510,6 +524,7 @@ ALL_TOOLS: List[Tool] = [
                 "text": {"type": "string", "description": "Text content"},
                 "fontSize": {"type": "number", "description": "Font size (optional)"},
                 "fontWeight": {"type": "number", "description": "Font weight (optional)"},
+                "fontColor": {"type": "object", "description": "Font color as RGBA {r,g,b,a} with 0-1 values. Defaults to black."},
                 "name": {"type": "string", "description": "Name of the text node (optional)"},
                 "parentId": {"type": "string", "description": "Parent node ID (optional)"},
             },
@@ -528,7 +543,6 @@ ALL_TOOLS: List[Tool] = [
                 },
                 "x": {"type": "number", "description": "X position (optional)"},
                 "y": {"type": "number", "description": "Y position (optional)"},
-                "parentId": {"type": "string", "description": "Parent node ID (optional)"},
             },
             "required": ["componentId"],
         },
@@ -1184,9 +1198,6 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             y = arguments.get("y")
             if y is not None:
                 params["y"] = y
-            parent_id = arguments.get("parentId")
-            if parent_id is not None:
-                params["parentId"] = parent_id
             result = await send_command("create_component_instance", params)
             return ok(result)
         except Exception as e:
