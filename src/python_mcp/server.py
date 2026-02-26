@@ -1572,8 +1572,6 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 return err("set_multiple_annotations requires annotations")
             if not isinstance(annotations, list):
                 return err("set_multiple_annotations: annotations must be an array")
-            if len(annotations) == 0:
-                return [TextContent(type="text", text="No annotations provided")]
             params: Dict[str, Any] = {"nodeId": node_id, "annotations": annotations}
             result = await send_command("set_multiple_annotations", params)
             typed = result if isinstance(result, dict) else {}
@@ -1599,8 +1597,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
                 return err("scan_text_nodes requires nodeId")
             params: Dict[str, Any] = {
                 "nodeId": node_id,
-                "useChunking": arguments.get("useChunking", True) if arguments.get("useChunking") is not None else True,
-                "chunkSize": arguments.get("chunkSize", 10) if arguments.get("chunkSize") is not None else 10,
+                "useChunking": arguments.get("useChunking", True),
+                "chunkSize": arguments.get("chunkSize", 10),
             }
             result = await send_command("scan_text_nodes", params)
             typed = result if isinstance(result, dict) else {}
@@ -1657,12 +1655,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             if node_id is not None:
                 params["instanceNodeId"] = node_id
             result = await send_command("get_instance_overrides", params)
-            typed = result if isinstance(result, dict) else {}
-            success = typed.get("success", False)
-            message = typed.get("message", "")
-            if success:
-                return ok(f"Successfully got instance overrides: {message}")
-            return err(f"Failed to get instance overrides: {message}")
+            return ok(result)
         except Exception as e:
             return err(f"Error getting instance overrides: {e}")
     elif name == "set_instance_overrides":
@@ -1704,12 +1697,19 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     elif name == "create_connections":
         try:
             connections = arguments.get("connections")
-            if not connections:
+            if connections is None:
                 return err("create_connections requires connections")
             if not isinstance(connections, list):
                 return err("create_connections: connections must be an array")
             if len(connections) == 0:
                 return [TextContent(type="text", text="No connections provided")]
+            for i, conn in enumerate(connections):
+                if not isinstance(conn, dict):
+                    return err(f"create_connections: item {i} must be an object")
+                if not conn.get("startNodeId"):
+                    return err(f"create_connections: item {i} missing startNodeId")
+                if not conn.get("endNodeId"):
+                    return err(f"create_connections: item {i} missing endNodeId")
             params: Dict[str, Any] = {"connections": connections}
             result = await send_command("create_connections", params)
             return ok(f"Created {len(connections)} connections: {json.dumps(result)}")
