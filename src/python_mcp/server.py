@@ -730,6 +730,10 @@ ALL_TOOLS: List[Tool] = [
                     "type": "string",
                     "description": "Layout mode: NONE, HORIZONTAL, or VERTICAL",
                 },
+                "layoutWrap": {
+                    "type": "string",
+                    "description": "Wrap mode: NO_WRAP or WRAP (optional, defaults to NO_WRAP)",
+                },
             },
             "required": ["nodeId", "layoutMode"],
         },
@@ -775,13 +779,13 @@ ALL_TOOLS: List[Tool] = [
             "type": "object",
             "properties": {
                 "nodeId": {"type": "string", "description": "ID of the node"},
-                "horizontalSizing": {
+                "layoutSizingHorizontal": {
                     "type": "string",
-                    "description": "Horizontal sizing mode (optional)",
+                    "description": "Horizontal sizing mode: FIXED, HUG, or FILL (optional)",
                 },
-                "verticalSizing": {
+                "layoutSizingVertical": {
                     "type": "string",
-                    "description": "Vertical sizing mode (optional)",
+                    "description": "Vertical sizing mode: FIXED, HUG, or FILL (optional)",
                 },
             },
             "required": ["nodeId"],
@@ -794,9 +798,10 @@ ALL_TOOLS: List[Tool] = [
             "type": "object",
             "properties": {
                 "nodeId": {"type": "string", "description": "ID of the frame node"},
-                "spacing": {"type": "number", "description": "Item spacing value"},
+                "itemSpacing": {"type": "number", "description": "Item spacing between auto-layout children"},
+                "counterAxisSpacing": {"type": "number", "description": "Distance between wrapped rows/columns. Only applies when layoutWrap is WRAP (optional)"},
             },
-            "required": ["nodeId", "spacing"],
+            "required": ["nodeId", "itemSpacing"],
         },
     ),
     # ── Group E: Annotations, Connections & Channel ─────────────────────────
@@ -1469,10 +1474,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
             if node_id is None:
                 return err("set_layout_sizing requires nodeId")
             params: Dict[str, Any] = {"nodeId": node_id}
-            h_sizing = arguments.get("horizontalSizing")
+            h_sizing = arguments.get("layoutSizingHorizontal")
             if h_sizing is not None:
                 params["layoutSizingHorizontal"] = h_sizing
-            v_sizing = arguments.get("verticalSizing")
+            v_sizing = arguments.get("layoutSizingVertical")
             if v_sizing is not None:
                 params["layoutSizingVertical"] = v_sizing
             result = await send_command("set_layout_sizing", params)
@@ -1490,12 +1495,15 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     elif name == "set_item_spacing":
         try:
             node_id = arguments.get("nodeId")
-            spacing = arguments.get("spacing")
+            spacing = arguments.get("itemSpacing")
             if node_id is None:
                 return err("set_item_spacing requires nodeId")
             if spacing is None:
-                return err("set_item_spacing requires spacing")
+                return err("set_item_spacing requires itemSpacing")
             params: Dict[str, Any] = {"nodeId": node_id, "itemSpacing": spacing}
+            counter_spacing = arguments.get("counterAxisSpacing")
+            if counter_spacing is not None:
+                params["counterAxisSpacing"] = counter_spacing
             result = await send_command("set_item_spacing", params)
             typed = result if isinstance(result, dict) else {}
             node_name = typed.get("name", node_id)
